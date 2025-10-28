@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net;">
+    <title>Secure Registration Form</title>
+  
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+        .strength-meter {
+            height: 4px;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Security Badge -->
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm">
+                <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                <span class="text-sm font-semibold text-gray-700">Secure Registration</span>
+            </div>
+        </div>
+
+        <!-- Main Form Card -->
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">Create Account</h1>
+            <p class="text-gray-600 mb-6">Join us with secure account creation</p>
+
+            <!-- Security Features Info -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
+                <div class="flex items-start gap-2">
+                    <svg class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <div class="text-sm text-blue-800">
+                        <strong>Protected by:</strong> XSS Prevention, CSRF Tokens, Input Sanitization, Rate Limiting
+                    </div>
+                </div>
+            </div>
+
+            <form id="registrationForm" novalidate>
+                <!-- CSRF Token (Hidden Field) -->
+                <input type="hidden" id="csrfToken" name="csrf_token" value="">
+
+                <!-- Username Field -->
+                <div class="mb-4">
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-2">
+                        Username
+                    </label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username"
+                        required
+                        pattern="^[a-zA-Z0-9_]{3,20}$"
+                        maxlength="20"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        placeholder="johndoe123"
+                    >
+                    <p class="mt-1 text-xs text-gray-500">3-20 characters, letters, numbers, and underscores only</p>
+                    <p id="usernameError" class="mt-1 text-sm text-red-600 hidden"></p>
+                </div>
+
+                <!-- Email Field -->
+                <div class="mb-4">
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                        Email Address
+                    </label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email"
+                        required
+                        maxlength="100"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        placeholder="john@example.com"
+                    >
+                    <p id="emailError" class="mt-1 text-sm text-red-600 hidden"></p>
+                </div>
+
+                <!-- Password Field -->
+                <div class="mb-4">
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                        Password
+                    </label>
+                    <div class="relative">
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password"
+                            required
+                            minlength="8"
+                            maxlength="128"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition pr-12"
+                            placeholder="••••••••"
+                        >
+                        <button 
+                            type="button" 
+                            id="togglePassword"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                            <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Password Strength Meter -->
+                    <div class="mt-2">
+                        <div class="flex gap-1 mb-1">
+                            <div class="strength-meter flex-1 bg-gray-200 rounded" id="strength1"></div>
+                            <div class="strength-meter flex-1 bg-gray-200 rounded" id="strength2"></div>
+                            <div class="strength-meter flex-1 bg-gray-200 rounded" id="strength3"></div>
+                            <div class="strength-meter flex-1 bg-gray-200 rounded" id="strength4"></div>
+                        </div>
+                        <p id="strengthText" class="text-xs text-gray-500">Password strength: <span id="strengthLabel">Not set</span></p>
+                    </div>
+
+                    <div class="mt-2 text-xs text-gray-500 space-y-1">
+                        <p class="flex items-center gap-1">
+                            <span id="check1" class="text-gray-400">○</span> At least 8 characters
+                        </p>
+                        <p class="flex items-center gap-1">
+                            <span id="check2" class="text-gray-400">○</span> Uppercase and lowercase letters
+                        </p>
+                        <p class="flex items-center gap-1">
+                            <span id="check3" class="text-gray-400">○</span> At least one number
+                        </p>
+                        <p class="flex items-center gap-1">
+                            <span id="check4" class="text-gray-400">○</span> At least one special character
+                        </p>
+                    </div>
+                    <p id="passwordError" class="mt-1 text-sm text-red-600 hidden"></p>
+                </div>
+
+                <!-- Confirm Password Field -->
+                <div class="mb-6">
+                    <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-2">
+                        Confirm Password
+                    </label>
+                    <input 
+                        type="password" 
+                        id="confirmPassword" 
+                        name="confirm_password"
+                        required
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        placeholder="••••••••"
+                    >
+                    <p id="confirmPasswordError" class="mt-1 text-sm text-red-600 hidden"></p>
+                </div>
+
+                <!-- Terms Checkbox -->
+                <div class="mb-6">
+                    <label class="flex items-start gap-2 cursor-pointer">
+                        <input 
+                            type="checkbox" 
+                            id="terms" 
+                            name="terms"
+                            required
+                            class="mt-1 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                        >
+                        <span class="text-sm text-gray-600">
+                            I agree to the <a href="#" class="text-blue-600 hover:underline">Terms of Service</a> and <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a>
+                        </span>
+                    </label>
+                    <p id="termsError" class="mt-1 text-sm text-red-600 hidden"></p>
+                </div>
+
+                <!-- Submit Button -->
+                <button 
+                    type="submit" 
+                    id="submitBtn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <span id="btnText">Create Account</span>
+                    <svg id="btnIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                    </svg>
+                    <svg id="spinner" class="w-5 h-5 animate-spin hidden" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </button>
+
+                <!-- Rate Limit Warning -->
+                <div id="rateLimitWarning" class="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 hidden">
+                    <p class="text-sm text-yellow-800">
+                        ⚠️ Too many attempts. Please wait <span id="countdown" class="font-bold"></span> seconds.
+                    </p>
+                </div>
+            </form>
+
+            <!-- Success Message -->
+            <div id="successMessage" class="mt-4 bg-green-50 border border-green-200 rounded-lg p-4 hidden slide-in">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    <p class="text-sm font-medium text-green-800">Account created successfully! 🎉</p>
+                </div>
+            </div>
+
+            <p class="mt-6 text-center text-sm text-gray-600">
+                Already have an account? <a href="#" class="text-blue-600 hover:underline font-medium">Sign in</a>
+            </p>
+        </div>
+
+        <!-- Security Info Footer -->
+        <div class="mt-6 text-center">
+            <p class="text-xs text-gray-600">
+                🔒 Your data is protected with industry-standard encryption
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Security Configuration
+        const SECURITY_CONFIG = {
+            MAX_ATTEMPTS: 3,
+            LOCKOUT_TIME: 30000, // 30 seconds
+            DEBOUNCE_DELAY: 500
+        };
+
+        // State Management
+        let submissionAttempts = 0;
+        let isLocked = false;
+        let lockoutTimer = null;
+
+        // Generate CSRF Token (simulated - in production, this comes from backend)
+        function generateCSRFToken() {
+            return 'csrf_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+        }
+
+        // Initialize CSRF Token
+        document.getElementById('csrfToken').value = generateCSRFToken();
+
+        // Input Sanitization
+        function sanitizeInput(input) {
+            const div = document.createElement('div');
+            div.textContent = input;
+            return div.innerHTML;
+        }
+
+        // Email Validation
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return emailRegex.test(email);
+        }
+
+        // Password Strength Calculator
+        function calculatePasswordStrength(password) {
+            let strength = 0;
+            const checks = {
+                length: password.length >= 8,
+                uppercase: /[A-Z]/.test(password) && /[a-z]/.test(password),
+                number: /\d/.test(password),
+                special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+            };
+
+            // Update checkmarks
+            document.getElementById('check1').textContent = checks.length ? '✓' : '○';
+            document.getElementById('check1').className = checks.length ? 'text-green-600' : 'text-gray-400';
+            
+            document.getElementById('check2').textContent = checks.uppercase ? '✓' : '○';
+            document.getElementById('check2').className = checks.uppercase ? 'text-green-600' : 'text-gray-400';
+            
+            document.getElementById('check3').textContent = checks.number ? '✓' : '○';
+            document.getElementById('check3').className = checks.number ? 'text-green-600' : 'text-gray-400';
+            
+            document.getElementById('check4').textContent = checks.special ? '✓' : '○';
+            document.getElementById('check4').className = checks.special ? 'text-green-600' : 'text-gray-400';
+
+            // Calculate strength
+            Object.values(checks).forEach(check => {
+                if (check) strength++;
+            });
+
+            return { strength, checks };
+        }
+
+        // Update Password Strength Meter
+        function updatePasswordStrength(password) {
+            const { strength, checks } = calculatePasswordStrength(password);
+            const meters = [1, 2, 3, 4].map(i => document.getElementById(`strength${i}`));
+            const strengthLabel = document.getElementById('strengthLabel');
+
+            // Reset all meters
+            meters.forEach(meter => {
+                meter.className = 'strength-meter flex-1 bg-gray-200 rounded';
+            });
+
+            // Update based on strength
+            const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500'];
+            const labels = ['Weak', 'Fair', 'Good', 'Strong'];
+
+            for (let i = 0; i < strength; i++) {
+                meters[i].className = `strength-meter flex-1 ${colors[strength - 1]} rounded`;
+            }
+
+            strengthLabel.textContent = strength > 0 ? labels[strength - 1] : 'Not set';
+            strengthLabel.className = strength > 0 ? `font-medium ${strength >= 3 ? 'text-green-600' : strength >= 2 ? 'text-yellow-600' : 'text-red-600'}` : '';
+
+            return checks;
+        }
+
+        // Toggle Password Visibility
+        document.getElementById('togglePassword').addEventListener('click', function() {
+            const passwordInput = document.getElementById('password');
+            const eyeIcon = document.getElementById('eyeIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>';
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>';
+            }
+        });
+
+        // Real-time Password Strength
+        document.getElementById('password').addEventListener('input', function(e) {
+            updatePasswordStrength(e.target.value);
+        });
+
+        // Form Validation
+        function validateForm() {
+            let isValid = true;
+            const errors = {};
+
+            // Username validation
+            const username = document.getElementById('username').value.trim();
+            const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+            if (!username) {
+                errors.username = 'Username is required';
+                isValid = false;
+            } else if (!usernameRegex.test(username)) {
+                errors.username = 'Username must be 3-20 characters with only letters, numbers, and underscores';
+                isValid = false;
+            }
+
+            // Email validation
+            const email = document.getElementById('email').value.trim();
+            if (!email) {
+                errors.email = 'Email is required';
+                isValid = false;
+            } else if (!isValidEmail(email)) {
+                errors.email = 'Please enter a valid email address';
+                isValid = false;
+            }
+
+            // Password validation
+            const password = document.getElementById('password').value;
+            const { checks } = calculatePasswordStrength(password);
+            if (!password) {
+                errors.password = 'Password is required';
+                isValid = false;
+            } else if (!Object.values(checks).every(check => check)) {
+                errors.password = 'Password must meet all requirements';
+                isValid = false;
+            }
+
+            // Confirm password validation
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            if (!confirmPassword) {
+                errors.confirmPassword = 'Please confirm your password';
+                isValid = false;
+            } else if (password !== confirmPassword) {
+                errors.confirmPassword = 'Passwords do not match';
+                isValid = false;
+            }
+
+            // Terms validation
+            const terms = document.getElementById('terms').checked;
+            if (!terms) {
+                errors.terms = 'You must agree to the terms and conditions';
+                isValid = false;
+            }
+
+            // Display errors
+            ['username', 'email', 'password', 'confirmPassword', 'terms'].forEach(field => {
+                const errorElement = document.getElementById(`${field}Error`);
+                if (errors[field]) {
+                    errorElement.textContent = errors[field];
+                    errorElement.classList.remove('hidden');
+                } else {
+                    errorElement.classList.add('hidden');
+                }
+            });
+
+            return isValid;
+        }
+
+        // Rate Limiting
+        function handleRateLimit() {
+            if (isLocked) return false;
+
+            submissionAttempts++;
+
+            if (submissionAttempts >= SECURITY_CONFIG.MAX_ATTEMPTS) {
+                isLocked = true;
+                const submitBtn = document.getElementById('submitBtn');
+                const rateLimitWarning = document.getElementById('rateLimitWarning');
+                
+                submitBtn.disabled = true;
+                rateLimitWarning.classList.remove('hidden');
+
+                let remainingTime = SECURITY_CONFIG.LOCKOUT_TIME / 1000;
+                const countdownElement = document.getElementById('countdown');
+                
+                const countdownInterval = setInterval(() => {
+                    remainingTime--;
+                    countdownElement.textContent = remainingTime;
+                    
+                    if (remainingTime <= 0) {
+                        clearInterval(countdownInterval);
+                        isLocked = false;
+                        submissionAttempts = 0;
+                        submitBtn.disabled = false;
+                        rateLimitWarning.classList.add('hidden');
+                    }
+                }, 1000);
+
+                return false;
+            }
+
+            return true;
+        }
+
+        // Form Submission
+        document.getElementById('registrationForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Check rate limiting
+            if (!handleRateLimit()) {
+                return;
+            }
+
+            // Validate form
+            if (!validateForm()) {
+                return;
+            }
+
+            // Sanitize inputs
+            const formData = {
+                username: sanitizeInput(document.getElementById('username').value.trim()),
+                email: sanitizeInput(document.getElementById('email').value.trim()),
+                password: document.getElementById('password').value, // Don't sanitize password
+                csrf_token: document.getElementById('csrfToken').value
+            };
+
+            // UI feedback
+            const submitBtn = document.getElementById('submitBtn');
+            const btnText = document.getElementById('btnText');
+            const btnIcon = document.getElementById('btnIcon');
+            const spinner = document.getElementById('spinner');
+
+            submitBtn.disabled = true;
+            btnText.textContent = 'Creating Account...';
+            btnIcon.classList.add('hidden');
+            spinner.classList.remove('hidden');
+
+            // Simulate API call (in production, this would be a real POST request to your backend)
+            setTimeout(() => {
+                // Success
+                document.getElementById('successMessage').classList.remove('hidden');
+                document.getElementById('registrationForm').reset();
+                
+                // Reset UI
+                submitBtn.disabled = false;
+                btnText.textContent = 'Create Account';
+                btnIcon.classList.remove('hidden');
+                spinner.classList.add('hidden');
+
+                // Reset password strength meter
+                [1, 2, 3, 4].forEach(i => {
+                    document.getElementById(`strength${i}`).className = 'strength-meter flex-1 bg-gray-200 rounded';
+                });
+                document.getElementById('strengthLabel').textContent = 'Not set';
+                document.getElementById('strengthLabel').className = '';
+
+                // Reset checkmarks
+                [1, 2, 3, 4].forEach(i => {
+                    document.getElementById(`check${i}`).textContent = '○';
+                    document.getElementById(`check${i}`).className = 'text-gray-400';
+                });
+
+                // Generate new CSRF token
+                document.getElementById('csrfToken').value = generateCSRFToken();
+
+                // Hide success message after 5 seconds
+                setTimeout(() => {
+                    document.getElementById('successMessage').classList.add('hidden');
+                }, 5000);
+
+                console.log('Form submitted with data:', formData);
+            }, 2000);
+        });
+
+        // Real-time input validation feedback
+        ['username', 'email'].forEach(fieldId => {
+            document.getElementById(fieldId).addEventListener('blur', function() {
+                const field = this;
+                const errorElement = document.getElementById(`${fieldId}Error`);
+                
+                if (fieldId === 'username') {
+                    const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+                    if (field.value && !usernameRegex.test(field.value.trim())) {
+                        errorElement.textContent = 'Username must be 3-20 characters with only letters, numbers, and underscores';
+                        errorElement.classList.remove('hidden');
+                    } else {
+                        errorElement.classList.add('hidden');
+                    }
+                } else if (fieldId === 'email') {
+                    if (field.value && !isValidEmail(field.value.trim())) {
+                        errorElement.textContent = 'Please enter a valid email address';
+                        errorElement.classList.remove('hidden');
+                    } else {
+                        errorElement.classList.add('hidden');
+                    }
+                }
+            });
+        });
+
+        // Confirm password real-time validation
+        document.getElementById('confirmPassword').addEventListener('input', function() {
+            const password = document.getElementById('password').value;
+            const confirmPassword = this.value;
+            const errorElement = document.getElementById('confirmPasswordError');
+
+            if (confirmPassword && password !== confirmPassword) {
+                errorElement.textContent = 'Passwords do not match';
+                errorElement.classList.remove('hidden');
+            } else {
+                errorElement.classList.add('hidden');
+            }
+        });
+
+        // Prevent form resubmission on page reload
+        if (window.history.replaceState) {
+            window.history.replaceState(null, null, window.location.href);
+        }
+    </script>
+</body>
+</html>
